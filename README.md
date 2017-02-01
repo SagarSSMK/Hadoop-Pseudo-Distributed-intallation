@@ -1,0 +1,1 @@
+# Hadoop-Pseudo-Distributed-intallation
