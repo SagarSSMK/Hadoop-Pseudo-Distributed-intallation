@@ -1,0 +1,189 @@
+Step to intsall hadoop single node installation.
+
+Step 1:
+
+Update the OS
+
+sudo apt-get update
+
+Step 2: 
+
+Install Java
+
+sudo apt-get install <latest version>
+
+Step 3: 
+
+check if java is intsalled or not
+
+java -version.
+
+Step 4:
+
+Add dedicated hadoop system user.
+
+$ sudo addgroup hadoop
+$ sudo adduser --ingroup hadoop hduser
+
+
+Step 5:
+
+configure SSH
+
+su - hduser
+ssh-keygen -t rsa -P ""
+cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
+ssh localhost
+
+Step 6:
+
+Hadoop Installation
+
+Use Added user for intallation
+
+$ cd /usr/local
+$ sudo tar xzf hadoop-1.0.3.tar.gz
+$ sudo mv hadoop-1.0.3<Version> hadoop
+$ sudo chown -R hduser:hadoop hadoop
+
+
+Step 7:
+
+Edit bashrc
+
+vim ~/.bashrc
+
+Add the following information
+
+--
+
+# Set Hadoop-related environment variables
+export HADOOP_HOME=/usr/local/hadoop
+
+# Set JAVA_HOME (we will also configure JAVA_HOME directly for Hadoop later on)
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
+
+# Some convenient aliases and functions for running Hadoop-related commands
+unalias fs &> /dev/null
+alias fs="hadoop fs"
+unalias hls &> /dev/null
+alias hls="fs -ls"
+
+# If you have LZO compression enabled in your Hadoop cluster and
+# compress job outputs with LZOP (not covered in this tutorial):
+# Conveniently inspect an LZOP compressed file from the command
+# line; run via:
+#
+# $ lzohead /hdfs/path/to/lzop/compressed/file.lzo
+#
+# Requires installed 'lzop' command.
+#
+lzohead () {
+    hadoop fs -cat $1 | lzop -dc | head -1000 | less
+}
+
+# Add Hadoop bin/ directory to PATH
+export PATH=$PATH:$HADOOP_HOME/bin
+--
+
+Step 8: 
+
+Make changes in hadoop-env.sh(/usr/local/hadoop/etc/hadoop/*)
+
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
+
+Step 9:
+
+Create a directory where you can store data files, network ports etc..
+
+$ sudo mkdir -p /app/hadoop/tmp
+$ sudo chown hduser:hadoop /app/hadoop/tmp
+# ...and if you want to tighten up security, chmod from 755 to 750...
+$ sudo chmod 750 /app/hadoop/tmp
+
+Step 10:
+
+Add the following sniptes to etc/core-site.xml
+
+<property>
+  <name>hadoop.tmp.dir</name>
+  <value>/app/hadoop/tmp</value>
+  <description>A base for other temporary directories.</description>
+</property>
+
+<property>
+  <name>fs.default.name</name>
+  <value>hdfs://localhost:54310</value>
+  <description>The name of the default file system.  A URI whose
+  scheme and authority determine the FileSystem implementation.  The
+  uri's scheme determines the config property (fs.SCHEME.impl) naming
+  the FileSystem implementation class.  The uri's authority is used to
+  determine the host, port, etc. for a filesystem.</description>
+</property>
+
+Step 11:
+
+Add the following sniptes to etc/mapred-site.xml
+
+<property>
+  <name>mapred.job.tracker</name>
+  <value>localhost:54311</value>
+  <description>The host and port that the MapReduce job tracker runs
+  at.  If "local", then jobs are run in-process as a single map
+  and reduce task.
+  </description>
+</property>
+
+Step 12:
+
+Add the following to etc/hdfs-site.xml
+
+Before adding, please create following directories to store namenode & data node entries.
+
+
+sudo mkdir -p /usr/local/hadoop_store/hdfs/namenode
+sudo mkdir -p /usr/local/hadoop_store/hdfs/datanode
+sudo chown -R hduser:hadoop /usr/local/hadoop_store
+
+
+<property>
+  <name>dfs.replication</name>
+  <value>1</value>
+  <description>Default block replication.
+  The actual number of replications can be specified when the file is created.
+  The default is used if replication is not specified in create time.
+  </description>
+</property>	
+<property>
+   <name>dfs.namenode.name.dir</name>
+   <value>file:/usr/local/hadoop_store/hdfs/namenode</value>
+ </property>
+ <property>
+   <name>dfs.datanode.data.dir</name>
+   <value>file:/usr/local/hadoop_store/hdfs/datanode</value>
+ </property>
+
+
+Step 13:
+
+Format the new hadoop file system:
+
+hadoop namenode -format(/usr/local/hadoop/bin/*)
+
+Step 14:
+
+Start the  hadoop
+
+start-all.sh(/usr/local/hadoop/sbin)
+
+Step 15:
+
+Run Hadoop
+
+jps
+
+To stop everything, user stop-all.sh
+
+
+
+
